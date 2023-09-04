@@ -1,99 +1,163 @@
 #! /usr/bin/python3
 
-# In grade center, right click on arrow next to assignment name and choose "Assignment File Download"
-# 		Scroll to the bottom of the page and select "Show All"
-# 		Then at the top of the page select the button next to the "Name" header to select all students
-#		Then click the "submit" button
-# 		Then click the "Download assignments now" hyperlink, and move the resulting file to the assignment directory
-# Run degrade.py in the assignment directory
+# In Brightspace,  select the assignment name to see the list of submissions. Scroll to the bottom of the page
+# 	and make sure that all students are displayed. Then click on the select checkbox at the top of the list to select
+#    all submissions, and click on "Download". This starts to create a download file.
+#    When the download file has been created, select the "Download" button to copy that onto your computer, in
+#    the "Downloads" folder.
+#
+#    Move the resulting file, whose name will start with the assignment name, to your directory for this assignment.
+#
+#    Run degrade.py in the assignment directory, specifying the assignment name as a parameter.
 # 
 # degrade.py will...
-# 	Read the first gradebook_*.zip file in the current directory
+# 	Read the <assignment_name>*.zip file in the current directory
 # 	Extract student submission info from the zip file and put it in ./sdoc/<student_name>/submission.txt
 #  Extract any submitted files from the student and put them in ./submissions/<student_name>/
-#     If there are any .zip files, unzip these files in ./submissions/<student_name>
+#     If there are any .zip or .tar files, unzip these files in ./submissions/<student_name>
 #
 #  Details (with time/date stamp) are appended to degrade_log.txt file in the current directory
-#	The gradebook_*.zip file that has been processed will be deleted
 
+import sys
 import glob
 import re
 import zipfile
+import tarfile
 from pathlib import Path
 import os
 import logging
-logging.basicConfig(filename='degrade_log.txt',format='%(asctime)s %(message)s')
+import os.path
+from os import path
 
-zfiles=glob.glob('gradebook_*.zip');
+logging.basicConfig(filename='degrade_log.txt',format='%(asctime)s %(message)s',level=20)
+
+if (len(sys.argv) < 2) :
+	print("Please invoke as ",sys.argv[0]," <assignment_name>");
+	exit(1);
+	
+assignment = sys.argv[1];
+assignment = assignment.replace("_"," ");
+print("Working on assignment: ", assignment);
+
+
+
+zfiles=glob.glob(assignment+'*.zip');
+# print("assignment:",assignment);
+# print("zfiles:",zfiles);
 if (len(zfiles)==0) :
-	print("There are no gradebook_*.zip files in the current directory... quitting");
-	logging.warning("There are no gradebook_*.zip files in the current directory... quitting")
+	print("There are no ",assignment,"*.zip files in the current directory... quitting");
+	logging.warning("There are no %s*.zip files in the current directory... quitting",assignment)
 	exit(1)
 	
-zfile=zfiles[0]	
-# print("Working on gradebook zip file: ",zfile);
+zfile=zfiles[-1]
+if (len(zfiles)>1) :
+	print("The current directory contains multiple assignment files. Working on the last in the list: ",zfile);
+	logging.warning("There are multiple assignment files in the current directory... selected: %s",zfile);
 
 # my ($sid,$sname,$sdate)=$gbfile=~/^gradebook_(\d+\.\d+)_(.*)_(.*)\.zip$/;
-gbinfo=re.match("gradebook_(\d+\.\d+)_(.*)_(.*)\.zip",zfile)
-sid=gbinfo[1]
-sname=re.sub("20",' ',gbinfo[2])
-sdatef=re.split('-',gbinfo[3])
-sdate="%2d/%d %d @ %02d:%02d:%02d" % (int(sdatef[1]),int(sdatef[2]),int(sdatef[0]),int(sdatef[3]),int(sdatef[4]),int(sdatef[5]))
-print("Working on gradebook zip file id: ",sid,"assignment:",sname)
-logging.info("Working on gradebook file id: %s assignment: %s downloaded %s",sid,sname,sdate);
+isgroup=False
+gbinfo=re.match("("+assignment+".*) Download (\S\S\S \d+, \d+) (\d+ [AP]M).zip",zfile)
+if not gbinfo:
+	print("Trying group submission format");
+	# gbinfo=re.match("("+assignment+".*) Download (\S\S\S \d+, \d+) (\d+ [AP]M)\(Group Submission Folder\).zip",zfile)
+	gbinfo=re.match("("+assignment+".*) Download (\S\S\S \d+, \d+) (\d+ [AP]M) \(Group Submission Folder\)\.zip",zfile)
+	isgroup=True
+if gbinfo: 
+	aname=gbinfo[1]
+	adate=gbinfo[2]
+	atime=gbinfo[3]
+	print("Working on Brightspace assignment: ",aname," downloaded on", adate,"at",atime)
+	logging.info("Working on Brightspace assignemnt: %s downloaded on %s at %s",aname,adate,atime);
 
-# Check to see if there are subdirectories of the current path for sdoc and submissions
-if (not Path('./sdoc').is_dir()) : os.mkdir('./sdoc')
-if (not Path('./submissions').is_dir()) : os.mkdir('./submissions')
+	# Check to see if there is a subdirectory of the current path for students
+	if (not Path('./students').is_dir()) : os.mkdir('./students')
 
-resubfile=re.compile(sname+"_(b\d{8})_attempt_(.*)\.txt")
-reothfile=re.compile(sname+"_(b\d{8})_attempt_([0-9\-]+)_(.*)")
-student='unknown'
-nextract=0
-nothers=0
-with zipfile.ZipFile(zfile) as zobj :
-	for zname in zobj.namelist() :
-		zsubm = resubfile.fullmatch(zname)
-		# zsubm = re.fullmatch(sname+"_(b/d{8})_attempt_(\d{4}\-\d{2}\-\d{2}\-\d{2}\-\d{2}\-\d{2})\.txt",zname)
-		if zsubm :
-			bnum=zsubm[1]
-			subdate=zsubm[2]
-			student=bnum
-			# print("  Found submission file for bnum:",bnum,"subdate:",subdate)
-			# Read this file to get user name
-			with zobj.open(zname) as sfile:
-				for line in sfile :
-					nlm=re.fullmatch("Name\: (.*) \(b\d{8}\)\s*",str(line,'utf-8'))
-					if nlm :
-						student=re.sub(" ","_",nlm[1])
-						if (not Path('./sdoc/'+student).is_dir()) : os.mkdir('./sdoc/'+student)
-						zobj.extract(zname,path="./sdoc/"+student)
-						os.rename('./sdoc/'+student+'/'+zname,'./sdoc/'+student+'/submission.txt')
-						print("  Working on student:",student)
-						logging.info("  Extracted submission.txt for student %s (%s)",student,bnum)
-						nextract=nextract+1
-						break
-					else :
-						print("      Name not found in submission file, found:",line)			
-						logging.warning("Name not found in submmission file, found: %s",line)
-		else :
-			zothm = reothfile.fullmatch(zname)
-			if zothm :
-				bnum=zothm[1]
-				subdate=zothm[2]
-				othfile=zothm[3]
-				if (not Path('./submissions/'+student).is_dir()) : os.mkdir('./submissions/'+student)
-				zobj.extract(zname,path="./submissions/"+student)
-				os.rename('./submissions/'+student+'/'+zname,'./submissions/'+student+'/'+othfile)
-				print("  Downloaded file",othfile,"into submissions/"+student)
-				nothers=nothers+1
-				if (othfile.endswith('.zip')) :
-					with ZipFile('submissions/'+student+'/'+othfile,'r') as subZip :
-						logging.info("  Extracting all files from student zip file %s into ./submissions/%s",othfile,student)
-						subZip.extractall(path='submissions/'+student)
+	with zipfile.ZipFile(zfile) as zobj :
+		for zname in zobj.namelist() :
+			if (zname=="index.html") : continue
+			fileInfo=re.match("(.*)/(.*)",zname);
+			studentDir=fileInfo[1];
+			file=fileInfo[2];
+			if isgroup :
+				#print("Working on group submission:",studentDir)
+				studentInfo=re.match("(\d{4,6})-\d{4,5} - .* (\d+) - (.*) - (.*)",studentDir);
+				if studentInfo :
+					sid=studentInfo[1];
+					sfullname=studentInfo[3]; # Submitters full name
+					sname=re.split(" ",sfullname);
+					sdir='students/group_'+studentInfo[2];
+					sSubmit=studentInfo[4];
+					#print("Extracted from",studentDir," - sid=",sid,"sfullname=",sfullname,"sdir=",sdir);
+				else :
+					logging.warning("Unable to extract group information from: %s",studentDir);
+					print("Unable to extract group information from:",studentDir);
+					continue;
 			else :
-				print("    Unrecognized Non-Submission file:",zname)
-				
-os.remove(zfile)	
-if (len(zfiles)>1) : print("More zfiles are available... run degrade.py again")
-logging.info("Extracted info for %d students, including %d submitted files",nextract,nothers)
+				studentInfo=re.match("(\d{4,5})-\d{4,5} - (.*) - (.*)",studentDir);
+				if studentInfo :
+					sid=studentInfo[1]
+					sfullname=studentInfo[2];
+					sname=re.split(" ",sfullname);
+					sdir='students/'+sname[-1]+'_'+sname[0]
+					sSubmit=studentInfo[3];
+				else : 
+					logging.warning("Unable to extract sudent information out of %s",studentDir)
+					print("Unable to extract student information out of",studentDir);
+					continue;
+
+			if (not Path(sdir).is_dir()) : os.mkdir(sdir)
+			
+			target=sdir+'/'+file;
+			subFile=open(sdir+'/submission_info.txt',"a");
+			if (path.exists(target)) :
+				# GOT THIS WRONG!!! the current submission is NEWER than the one we've already got. Change sdir to prev!
+				#pdir=sdir+'/prev'
+				#if (not Path(pdir).is_dir()) : os.mkdir(pdir)
+				#pv=0;
+				#target=pdir+'/'+file+'v'+str(pv)
+				#while(path.exists(target)):
+				#	pv=pv+1;
+				#	target=pdir+'/'+file+'v'+str(pv)
+				#zobj.extract(zname,path=sdir)
+				#os.rename(sdir+'/'+zname,target)
+				#subFile.write("File %s presubmitted on %s moved to %s\n"%(file,sSubmit,target));
+				#logging.info("Student %s pre-submitted %s on %s",sfullname,file,sSubmit);
+				pdir=sdir+'/prev'
+				if (not Path(pdir).is_dir()) : os.mkdir(pdir)
+				pv=0;
+				ptarget=pdir+'/'+file+'_v'+str(pv)
+				while(path.exists(ptarget)):
+					pv=pv+1;
+					ptarget=pdir+'/'+file+'_v'+str(pv)
+				os.rename(sdir+'/'+file,ptarget)
+				subFile.write("Earlier submission: file %s moved to %s\n"%(file,ptarget));
+				logging.info("Student %s early version of file %s moved to %s",sfullname,file,ptarget);
+			# else :
+			# Extract the file into the student directory
+			zobj.extract(zname,path=sdir)
+			os.rename(sdir+'/'+zname,target)
+			subFile.write("File %s submitted on %s\n"%(file,sSubmit));
+			logging.info("Student %s submitted %s on %s",sfullname,file,sSubmit);
+			# unzip and/or untar the student submission if required...
+			if (file.endswith('.zip')) :
+				with zipfile.ZipFile(target,'r') as subZip :
+					logging.info("  Extracting all files from student zip file %s into %s",file,sdir)
+					subZip.extractall(path=sdir)
+			elif (file.endswith('.tar.gz') or file.endswith('.tar')) :
+				try :
+					with tarfile.open(target, 'r',errorlevel=2) as subTar :
+						logging.info("  Extracting all files from student tar file %s into %s",file,sdir);
+						subTar.extractall(sdir);
+				except: 
+						logging.info("  Extract of files from student tar file %s failed.",file);
+			# Also handle RAR files?
+			os.rmdir(sdir+'/'+studentDir);
+			subFile.close();
+			
+	logging.info("Extract of file %s complete",zfile);
+	print("Extract of file",zfile,"complete");
+else :
+	logging.warning("Unable to extract information out of file name: %s ",zfile);
+	print("Unable to extract information out of file name:",zfile);
+		
+exit(0)
