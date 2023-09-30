@@ -80,7 +80,7 @@ if gbinfo:
 			file=fileInfo[2];
 			if isgroup :
 				#print("Working on group submission:",studentDir)
-				studentInfo=re.match("(\d{4,6})-\d{4,5} - .* (\d+) - (.*) - (.*)",studentDir);
+				studentInfo=re.match("(\d{4,6})-\d{4,6} - .* (\d+) - (.*) - (.*)",studentDir);
 				if studentInfo :
 					sid=studentInfo[1];
 					sfullname=studentInfo[3]; # Submitters full name
@@ -93,7 +93,7 @@ if gbinfo:
 					print("Unable to extract group information from:",studentDir);
 					continue;
 			else :
-				studentInfo=re.match("(\d{4,5})-\d{4,5} - (.*) - (.*)",studentDir);
+				studentInfo=re.match("(\d{4,6})-\d{4,6} - (.*) - (.*)",studentDir);
 				if studentInfo :
 					sid=studentInfo[1]
 					sfullname=studentInfo[2];
