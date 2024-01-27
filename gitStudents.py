@@ -54,7 +54,7 @@ logging.basicConfig(filename='gitStudents_log.txt',format='%(asctime)-15s %(leve
 
 # PROF_ID='tbartens'; # <-------------- Please update with your GIT userid!
 # PROF_PWD=getpass.getpass(prompt=f'Enter the password for GIT userid {PROF_ID} : ');
-CLASS_NAME='CS220-2023F'; # Current organization to work on
+CLASS_NAME='CS220-2023S'; # Current organization to work on
 pwd=os.getcwd();
 rep=os.path.basename(pwd)
 # If there is a command line argument, use the first command line argument as the rep instead of the directory name
