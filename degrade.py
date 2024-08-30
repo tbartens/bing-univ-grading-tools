@@ -80,7 +80,7 @@ if gbinfo:
 			file=fileInfo[2];
 			if isgroup :
 				#print("Working on group submission:",studentDir)
-				studentInfo=re.match("(\d{4,6})-\d{4,6} - .* (\d+) - (.*) - (.*)",studentDir);
+				studentInfo=re.match("(\d{4,6})-\d{4,5} - .* (\d+) - (.*) - (.*)",studentDir);
 				if studentInfo :
 					sid=studentInfo[1];
 					sfullname=studentInfo[3]; # Submitters full name
@@ -93,12 +93,14 @@ if gbinfo:
 					print("Unable to extract group information from:",studentDir);
 					continue;
 			else :
-				studentInfo=re.match("(\d{4,6})-\d{4,6} - (.*) - (.*)",studentDir);
+				# Example student directory: 54021-100101 - Ashley Barb Caldelas - Sep 28, 2023 558 PM
+				studentInfo=re.match("(\d{4,5})-\d{4,6} - (.*) - (.*)",studentDir);
 				if studentInfo :
 					sid=studentInfo[1]
 					sfullname=studentInfo[2];
 					sname=re.split(" ",sfullname);
-					sdir='students/'+sname[-1]+'_'+sname[0]
+					lastname=sname[0].rstrip(',') # Changed 2024F!
+					sdir='students/'+lastname+'_'+sname[-1]
 					sSubmit=studentInfo[3];
 				else : 
 					logging.warning("Unable to extract sudent information out of %s",studentDir)
