@@ -114,7 +114,9 @@ if gbinfo:
                     keyname=lastname+'_'+sname[-1]
                     sdir='students/'+keyname
                     sSubmit=studentInfo[3];
+                    # print("Student: ",keyname," comparing ",sSubmit," to ",lastSubmit.get(keyname));
                     if (compareDate(sSubmit,lastSubmit.get(keyname))) :
+                        # print("   and it was newer!");
                         newer=True
                         lastSubmit[keyname]=sSubmit;
                 else : 
@@ -141,10 +143,12 @@ if gbinfo:
                     subFile.write("Earlier submission: file %s moved to %s\n"%(file,ptarget));
                     logging.info("Student %s early version of file %s moved to %s",sfullname,file,ptarget);
                 else : # Older
-                    zobj.extract(zname,path=sdir)
-                    os.rename(sdir+'/'+zname,target)
+                    zobj.extract(zname,path=pdir)
+                    os.rename(pdir+'/'+zname,ptarget)
+                    os.rmdir(pdir+'/'+studentDir);
                     subFile.write("File %s presubmitted on %s moved to %s\n"%(file,sSubmit,target));
                     logging.info("Student %s pre-submitted %s on %s",sfullname,file,sSubmit);
+                    continue; # Nothing else to do in this case.
             # else :
             # Extract the file into the student directory
             zobj.extract(zname,path=sdir)
@@ -162,8 +166,8 @@ if gbinfo:
                         logging.info("  Extracting all files from student tar file %s into %s",file,sdir);
                         subTar.extractall(sdir);
                 except: 
-                        logging.info("  Extract of files from student tar file %s failed.",file);
-            # Also handle RAR files?
+                    logging.info("  Extract of files from student tar file %s failed.",file);
+                # Also handle RAR files?
             os.rmdir(sdir+'/'+studentDir);
             subFile.close();
             
