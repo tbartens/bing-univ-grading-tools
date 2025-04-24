@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 
 # In Brightspace,  select the assignment name to see the list of submissions. Scroll to the bottom of the page
-# 	and make sure that all students are displayed. Then click on the select checkbox at the top of the list to select
+#  and make sure that all students are displayed. Then click on the select checkbox at the top of the list to select
 #    all submissions, and click on "Download". This starts to create a download file.
 #    When the download file has been created, select the "Download" button to copy that onto your computer, in
 #    the "Downloads" folder.
@@ -11,8 +11,8 @@
 #    Run degrade.py in the assignment directory, specifying the assignment name as a parameter.
 # 
 # degrade.py will...
-# 	Read the <assignment_name>*.zip file in the current directory
-# 	Extract student submission info from the zip file and put it in ./sdoc/<student_name>/submission.txt
+#  Read the <assignment_name>*.zip file in the current directory
+#  Extract student submission info from the zip file and put it in ./sdoc/<student_name>/submission.txt
 #  Extract any submitted files from the student and put them in ./submissions/<student_name>/
 #     If there are any .zip or .tar files, unzip these files in ./submissions/<student_name>
 #
@@ -40,9 +40,9 @@ def compareDate(zipDate,oldDate) :
 logging.basicConfig(filename='degrade_log.txt',format='%(asctime)s %(message)s',level=20)
 
 if (len(sys.argv) < 2) :
-	print("Please invoke as ",sys.argv[0]," <assignment_name>");
-	exit(1);
-	
+   print("Please invoke as ",sys.argv[0]," <assignment_name>");
+   exit(1);
+   
 assignment = sys.argv[1];
 assignment = assignment.replace("_"," ");
 print("Working on assignment: ", assignment);
@@ -53,14 +53,14 @@ zfiles=glob.glob(assignment+'*.zip');
 # print("assignment:",assignment);
 # print("zfiles:",zfiles);
 if (len(zfiles)==0) :
-	print("There are no ",assignment,"*.zip files in the current directory... quitting");
-	logging.warning("There are no %s*.zip files in the current directory... quitting",assignment)
-	exit(1)
-	
+   print("There are no ",assignment,"*.zip files in the current directory... quitting");
+   logging.warning("There are no %s*.zip files in the current directory... quitting",assignment)
+   exit(1)
+   
 zfile=zfiles[-1]
 if (len(zfiles)>1) :
-	print("The current directory contains multiple assignment files. Working on the last in the list: ",zfile);
-	logging.warning("There are multiple assignment files in the current directory... selected: %s",zfile);
+   print("The current directory contains multiple assignment files. Working on the last in the list: ",zfile);
+   logging.warning("There are multiple assignment files in the current directory... selected: %s",zfile);
 
 # my ($sid,$sname,$sdate)=$gbfile=~/^gradebook_(\d+\.\d+)_(.*)_(.*)\.zip$/;
 isgroup=False
@@ -137,7 +137,7 @@ if gbinfo:
                 while(path.exists(ptarget)):
                     pv=pv+1;
                     ptarget=pdir+'/'+file+'_v'+str(pv)
-                # The newer flag is set above based on comparing the time date stamp				
+                # The newer flag is set above based on comparing the time date stamp            
                 if (newer) :    
                     os.rename(sdir+'/'+file,ptarget)
                     subFile.write("Earlier submission: file %s moved to %s\n"%(file,ptarget));
@@ -155,19 +155,22 @@ if gbinfo:
             os.rename(sdir+'/'+zname,target)
             subFile.write("File %s submitted on %s\n"%(file,sSubmit));
             logging.info("Student %s submitted %s on %s",sfullname,file,sSubmit);
-            # unzip and/or untar the student submission if required...
-            if (file.endswith('.zip')) :
-                with zipfile.ZipFile(target,'r') as subZip :
-                    logging.info("  Extracting all files from student zip file %s into %s",file,sdir)
-                    subZip.extractall(path=sdir)
-            elif (file.endswith('.tar.gz') or file.endswith('.tar')) :
-                try :
-                    with tarfile.open(target, 'r',errorlevel=2) as subTar :
-                        logging.info("  Extracting all files from student tar file %s into %s",file,sdir);
-                        subTar.extractall(sdir);
-                except: 
-                    logging.info("  Extract of files from student tar file %s failed.",file);
-                # Also handle RAR files?
+            if (newer) :
+               # unzip and/or untar the student submission if required...
+               if (file.endswith('.zip')) :
+                   with zipfile.ZipFile(target,'r') as subZip :
+                       logging.info("  Extracting all files from student zip file %s into %s",file,sdir)
+                       subZip.extractall(path=sdir)
+               elif (file.endswith('.tar.gz') or file.endswith('.tar')) :
+                   try :
+                       with tarfile.open(target, 'r',errorlevel=2) as subTar :
+                           logging.info("  Extracting all files from student tar file %s into %s",file,sdir);
+                           subTar.extractall(sdir);
+                   except: 
+                       logging.info("  Extract of files from student tar file %s failed.",file);
+                   # Also handle RAR files?
+            else :
+               logging.info("  Not unpacking file %s because it is older than the current info.",file);
             os.rmdir(sdir+'/'+studentDir);
             subFile.close();
             
@@ -176,5 +179,5 @@ if gbinfo:
 else :
     logging.warning("Unable to extract information out of file name: %s ",zfile);
     print("Unable to extract information out of file name:",zfile);
-		
+      
 exit(0)
