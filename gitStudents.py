@@ -74,11 +74,11 @@ if (not Path("students").is_dir()) :
 	print("Please run degrade.py before running gitStudents.py");
 	exit(1);
 	
-repara=re.compile("\<p\>(.*)\<\/p\>")
-respan=re.compile("\<span [^\>]*\>(.*)\<\/span\>")
+repara=re.compile("\\<p\\>(.*)\\<\\/p\\>")
+respan=re.compile("\\<span [^\\>]*\\>(.*)\\<\\/span\\>")
 # Example: HW01 Object Oriented C-Jan 30, 2023 700 PM.html
-rehtmlfn=re.compile(".*\-([A-Z][a-z]{2}) (\d+), (\d+) (\d+) ([AP]M).html");
-rehtmlfn_x=re.compile(".*\-([A-Z][a-z]{2}) (\d+), (\d+) (\d+) ([AP]M)\((\d+)\).html");
+rehtmlfn=re.compile(".*\\-([A-Z][a-z]{2}) (\\d+), (\\d+) (\\d+) ([AP]M).html");
+rehtmlfn_x=re.compile(".*\\-([A-Z][a-z]{2}) (\\d+), (\\d+) (\\d+) ([AP]M)\\((\\d+)\).html");
 
 with open("students.txt","r") as students:
 	for line in students :

@@ -64,12 +64,13 @@ if (len(zfiles)>1) :
 
 # my ($sid,$sname,$sdate)=$gbfile=~/^gradebook_(\d+\.\d+)_(.*)_(.*)\.zip$/;
 isgroup=False
-gbinfo=re.match("("+assignment+".*) Download (\S\S\S \d+, \d+) (\d+ [AP]M).zip",zfile)
+fileNameTemplate="("+assignment+".*) Download (\\S\\S\\S \\d+, \\d+) (\\d+ [AP]M).zip"
+gbinfo=re.match(fileNameTemplate,zfile)
 lastSubmit={}; # Dictionary Key=student name, Value=time/date of most recent submission added 2024F
 if not gbinfo:
     print("Trying group submission format");
     # gbinfo=re.match("("+assignment+".*) Download (\S\S\S \d+, \d+) (\d+ [AP]M)\(Group Submission Folder\).zip",zfile)
-    gbinfo=re.match("("+assignment+".*) Download (\S\S\S \d+, \d+) (\d+ [AP]M) \(Group Submission Folder\)\.zip",zfile)
+    gbinfo=re.match("("+assignment+".*) Download (\\S\\S\\S \\d+, \\d+) (\\d+ [AP]M) \\(Group Submission Folder\\)\\.zip",zfile)
     isgroup=True
 if gbinfo: 
     aname=gbinfo[1]
@@ -90,7 +91,7 @@ if gbinfo:
             newer=False;
             if isgroup :
                 #print("Working on group submission:",studentDir)
-                studentInfo=re.match("(\d{4,6})-\d{4,5} - .* (\d+) - (.*) - (.*)",studentDir);
+                studentInfo=re.match("(\\d{4,6})-\\d{4,5} - .* (\\d+) - (.*) - (.*)",studentDir);
                 if studentInfo :
                     sid=studentInfo[1];
                     sfullname=studentInfo[3]; # Submitters full name
@@ -105,7 +106,7 @@ if gbinfo:
             else :
                 # Example student directory: 54021-100101 - Ashley Barb Caldelas - Sep 28, 2023 558 PM
                 # Example student directory: 54296-160876 - Isac, Mathew - Nov 11, 2024 135 PM
-                studentInfo=re.match("(\d{4,5})-\d{4,6} - (.*) - (.*)",studentDir);
+                studentInfo=re.match("(\\d{4,5})-\\d{4,6} - (.*) - (.*)",studentDir);
                 if studentInfo :
                     sid=studentInfo[1]
                     sfullname=studentInfo[2];
