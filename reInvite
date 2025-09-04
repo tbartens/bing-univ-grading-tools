@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Ensure an organization name is provided
+ORG_NAME="CS220-2025F"
+
+# Set your assignment repo prefix
+if [ "$#" -ne 1 ]; then
+    echo "Error: Please specify the assignment name as the only argument."
+    exit 1
+fi
+
+PREFIX=$1
+
+echo "Finding repositories starting with $PREFIX"
+
+# Find all repositories in the organization that begin with the prefix
+matching_repos=$(gh repo list "$ORG_NAME" --limit 1000 --json name --jq '.[].name' | grep "^$PREFIX")
+
+if [ -z "$matching_repos" ]; then
+    echo "No repositories beginning with $PREFIX"
+    exit 1
+fi
+
+echo "Found matching repositories:"
+echo "$matching_repos"
+echo ""
+
+# Iterate through each matching repository
+echo "$matching_repos" | while read repo_name; do
+    full_repo_name="$ORG_NAME/$repo_name"
+    
+    # Get pending invitations for this repo
+    invites=$(gh api "repos/$full_repo_name/invitations" --jq '.[] | "\(.id),\(.invitee.login)"' 2>/dev/null)
+    
+    # Delete and recreate invites
+    if [ -n "$invites" ]; then
+        echo "$invites" | while IFS=',' read invite_id invitee; do
+            echo "Processing invitation for user: $invitee"
+            echo "  -> Deleting invitation ID $invite_id from $full_repo_name..."
+            gh api "repos/$full_repo_name/invitations/$invite_id" -X DELETE --silent
+            echo "  -> Re-creating invitation for user: $invitee"
+            gh api "repos/$full_repo_name/collaborators/$invitee" -X PUT -f permission=write --silent
+        done
+    else
+        echo "No invites found for repository: $repo_name"
+    fi
+    echo ""
+done
+
+echo "Done processing all matching repositories."

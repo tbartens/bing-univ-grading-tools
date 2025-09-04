@@ -80,6 +80,16 @@ If there are errors and gitStudents.py needs to be re-run, there is no problem. 
 
 Warning - gitStudents.py assumes you have an established your gitHub credentials using a credential manager. If not, you will be prompted for you git userid and password, or the passphrase twice for each student.
 
+## reinvite - Re-issue GitHub invitations for a GitHub Classroom Assignment
+
+There seems to be a bug in GitHub Classroom. When a student accepts an assignment, for a certain percentage of the students, the accept process creates a new repository for the student, but fails to finish granting access to the student for that repository. The student then gets a message "You no longer have access to your repository, Contact your Professor". In this case, the repository itself shows that the student has been invited, but the status is "Pending Invite".
+
+The solution to this problem is to delete the broken invitation and re-invite the student. The student will then get an invitation in their email to accept access to their repository. When the student accepts the invitation, then he or she is granted access, and things can continue as expected.
+
+The "reinvite" script is a bash script provided by Jay DesLauriers from Imperial College London via the Github Classroom online discussion (slightly modified by me.)
+
+To use the reinvite script, make sure the ORGNAME variable at the top of the script is correct (and that you are authorized to GitHub via CLI). Then invoke as `reinvite <assignment>` (for example `reinvite hw01`). The script will find all the repositories for that assignment, and then go through each one to see if there is a pending invitation. If there is one, the script will delete the invitation, and recreate the invitation for the user.
+
 ## massPush.py - Push a file into multiple student repositories
 
 The massPush.py script should **only** be used when there is an error in the original repository, and you need to push a new version out to all students. This is inherently dangerous and should be avoided if possible because students need to do a `git pull` on all their clones after you run massPush.py.
